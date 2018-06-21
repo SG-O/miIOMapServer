@@ -64,7 +64,8 @@ public class MapsTest {
     @Test
     public void oldTest() {
         assertEquals(2, s0.numberOfPreviousMaps());
-        assertEquals("[000143.20180604001001609_1387101062713_2018032100REL, 000144.20180604034309095_1387101062713_2018032100REL]", s0.getPreviousMaps().toString());
+        assertTrue(s0.getPreviousMaps().contains("000143.20180604001001609_1387101062713_2018032100REL"));
+        assertTrue(s0.getPreviousMaps().contains("000144.20180604034309095_1387101062713_2018032100REL"));
         assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=4831, boundingBox=java.awt.Rectangle[x=442,y=450,width=133,height=117], overSample=1}", s0.getOldMap("000143.20180604001001609_1387101062713_2018032100REL").toString());
         assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=4598, boundingBox=java.awt.Rectangle[x=460,y=409,width=90,height=118], overSample=1}", s0.getOldMap("000144.20180604034309095_1387101062713_2018032100REL").toString());
         s0.updatePreviousMaps();
