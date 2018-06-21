@@ -1,0 +1,18 @@
+syntax = "proto3";
+option java_package = "de.sg_o.proto";
+option java_outer_classname = "MapErrorProto";
+
+message MapError {
+    enum ErrorCode {
+        UNKNOWN= 0;
+        NONE = 1;
+        NOT_AUTHENTICATED = 2;
+        MAP_NOT_FOUND = 3;
+        MAP_NOT_AVAILABLE = 4;
+        COMMUNICATION_ERROR = 5;
+        SLAM_OUT_OF_RANGE = 6;
+    }
+
+    ErrorCode code = 1;
+    string opt = 2;
+}

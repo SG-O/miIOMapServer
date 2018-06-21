@@ -1,0 +1,30 @@
+before_script:
+  - javac -version
+
+stages:
+  - test
+  - deploy
+
+maven_test:
+  stage: test
+  script:
+    - "mvn test"
+    - "cat target/site/jacoco/index.html"
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - target/site/jacoco/
+
+coverage:
+  stage: deploy
+  script:
+    - git clone git@git.sg-o.de:root/miioMapServer.wiki.git
+    - mkdir -p report
+    - mv target/site/jacoco/jacoco.csv report/jacoco.csv
+    - csv2md --pretty report/jacoco.csv > miioMapServer.wiki/report.md
+    - cd miioMapServer.wiki/
+    - git add .
+    - git diff-index --quiet HEAD || git commit -a -m "Updated coverage report"
+    - git push origin master
+  only:
+    - master

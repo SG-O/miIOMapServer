@@ -1,0 +1,15 @@
+syntax = "proto3";
+option java_package = "de.sg_o.proto";
+option java_outer_classname = "MapPackageProto";
+
+import "mapPackageColor.proto";
+import "mapError.proto";
+
+message MapPackage {
+    int32 activeX = 1;
+    int32 activeY = 2;
+    int32 activeW = 3;
+    int32 activeH = 4;
+    repeated MapPackageColor data = 5;
+    MapError error = 6;
+}

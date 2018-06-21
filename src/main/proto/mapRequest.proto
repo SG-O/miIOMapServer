@@ -1,0 +1,22 @@
+syntax = "proto3";
+option java_package = "de.sg_o.proto";
+option java_outer_classname = "MapRequestProto";
+
+message MapRequest {
+    enum RequestCode {
+        UNKNOWN= 0;
+        MAP_INFO = 1;
+        GET_ACTIVE_MAP = 2;
+        GET_OLD_MAP = 3;
+        GET_PREVIOUS_MAP = 4;
+        GET_ACTIVE_MAP_SLAM = 5;
+        GET_OLD_MAP_SLAM = 6;
+        GET_PREVIOUS_MAP_SLAM = 7;
+        AUTHENTICATE = 8;
+        END_COMMUNICATION = 9;
+    }
+
+    RequestCode code = 1;
+    string opt = 2;
+    int32 optInt = 3;
+}

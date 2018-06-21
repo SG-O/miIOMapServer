@@ -1,0 +1,14 @@
+syntax = "proto3";
+option java_package = "de.sg_o.proto";
+option java_outer_classname = "MapSlamProto";
+
+import "mapError.proto";
+
+message MapSlam {
+    message Point {
+        float x = 1;
+        float y = 2;
+    }
+    repeated Point points = 1;
+    MapError error = 2;
+}

@@ -1,0 +1,11 @@
+syntax = "proto3";
+option java_package = "de.sg_o.proto";
+option java_outer_classname = "MapInfoProto";
+
+import "mapError.proto";
+
+message MapInfo {
+    bool activeMapAvailable = 1;
+    repeated string oldMaps = 2;
+    MapError error = 3;
+}

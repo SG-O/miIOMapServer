@@ -1,0 +1,10 @@
+syntax = "proto3";
+option java_package = "de.sg_o.proto";
+option java_outer_classname = "MapPackageColorProto";
+
+import "mapError.proto";
+
+message MapPackageColor {
+    int32 color = 1;
+    repeated int32 coordinates = 2;
+}
