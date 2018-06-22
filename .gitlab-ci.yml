@@ -28,3 +28,14 @@ coverage:
     - git push origin master
   only:
     - master
+
+maven_deploy:
+  stage: deploy
+  script:
+    - "mvn deploy"
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - target/*.jar
+      - target/*.asc
+      - target/*.pom
