@@ -56,6 +56,7 @@ public class VacuumMap implements Serializable {
      * @param image The reader the map image should be read from.
      * @param slam The reader the slam log should be read from.
      * @param overSample The oversampling that should be applied to the map.
+     * @param logLevel The log level.
      */
     public VacuumMap(BufferedReader image, BufferedReader slam, int overSample, Level logLevel) {
         if (logLevel != null) {
