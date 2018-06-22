@@ -128,7 +128,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.0.1</version>
                 <configuration>
-
+                    <excludePackageNames>de.sg_o.proto</excludePackageNames>
                 </configuration>
                 <executions>
                     <execution>
