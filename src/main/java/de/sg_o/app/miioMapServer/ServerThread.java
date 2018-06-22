@@ -12,6 +12,9 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * The ServerThread class handles a single clients requests.
+ */
 @SuppressWarnings("WeakerAccess")
 public class ServerThread extends Thread {
     private final static Logger LOGGER = Logger.getLogger(ServerThread.class.getName());
@@ -21,6 +24,14 @@ public class ServerThread extends Thread {
     private Token tk;
     private boolean authenticated = false;
 
+    /**
+     * Create a new server thread.
+     * @param socket The socket of the new client.
+     * @param mapHandler The map handler.
+     * @param tk The devices token.
+     * @param logLevel The log level.
+     * @throws IOException If the the socket is invalid, the token is invalid or the map handler is invalid.
+     */
     public ServerThread(Socket socket, Maps mapHandler, Token tk, Level logLevel) throws IOException {
         super("MapServerThread");
         if (logLevel != null) {
@@ -44,6 +55,9 @@ public class ServerThread extends Thread {
         this.tk = tk;
     }
 
+    /**
+     * Start the server thread.
+     */
     public void run() {
         LOGGER.info("Starting server thread");
         InputStream inputStream;

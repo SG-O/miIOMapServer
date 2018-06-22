@@ -18,6 +18,16 @@ public class Server extends Thread{
     private boolean running;
     private Token tk;
 
+    /**
+     * Create a new server.
+     * @param activeMapDirectory The directory where the active maps are stored.
+     * @param previousMapsDirectory The directory where the directories of old maps can be found.
+     * @param port The port to start the server at.
+     * @param tokenFile The token of the device.
+     * @param logLevel The log level.
+     * @param logFile The file where to store the logs. If null the logs will be output to the console.
+     * @throws IOException If the directories are invalid, If the log file is invalid or if the token is invalid.
+     */
     public Server(File activeMapDirectory, File previousMapsDirectory, int port, File tokenFile, Level logLevel, File logFile) throws IOException {
         if (logFile != null) {
             Logger globalLogger =  LOGGER.getParent();
@@ -74,6 +84,9 @@ public class Server extends Thread{
         return new Token(decodedBytes);
     }
 
+    /**
+     * Run the server.
+     */
     @Override
     public void run() {
         LOGGER.info("Starting server");
@@ -105,6 +118,9 @@ public class Server extends Thread{
         }
     }
 
+    /**
+     * Stop the server.
+     */
     public void terminate() {
         LOGGER.info("Terminating server");
         running = false;

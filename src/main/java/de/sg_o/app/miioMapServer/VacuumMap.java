@@ -36,6 +36,9 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+/**
+ * This class handles the vacuums map. It parses the files stored on the vacuum, creates a bounding box for the area with valid data in the map, allows scaling the map, provides serialization and deserialization.
+ */
 @SuppressWarnings("WeakerAccess")
 public class VacuumMap implements Serializable {
     private static final long serialVersionUID = 6328146796574327681L;

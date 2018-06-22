@@ -7,6 +7,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
+/**
+ * This class handles the parsing of the maps stored on the device.
+ */
 public class Maps {
     private final static Logger LOGGER = Logger.getLogger(Maps.class.getName());
 
@@ -20,6 +23,13 @@ public class Maps {
     private long activeMapLastModified = 0;
     private LinkedHashMap<String, File[]> previousMaps = new LinkedHashMap<>();
 
+    /**
+     * Create a new Maps object.
+     * @param activeMapDirectory The directory where the files for the active map can be found.
+     * @param previousMapsDirectory The directory where the directories for the older maps can be found.
+     * @param logLevel The log level.
+     * @throws IOException When the directories are invalid.
+     */
     public Maps(File activeMapDirectory, File previousMapsDirectory, Level logLevel) throws IOException {
         if (logLevel != null) {
             LOGGER.setLevel(logLevel);
@@ -175,6 +185,11 @@ public class Maps {
         }
     }
 
+    /**
+     * Get a old map.
+     * @param name The maps name.
+     * @return The old map or null if no map was found.
+     */
     public VacuumMap getOldMap(String name){
         if (name == null) {
             LOGGER.warning("No old map file provided to parse");
@@ -239,30 +254,52 @@ public class Maps {
         }
     }
 
+    /**
+     * @return The active map or null if it isn't available.
+     */
     public VacuumMap getActiveMap() {
         return activeMap;
     }
 
+    /**
+     * @return The latest of the old maps or null if it isn't available.
+     */
     public VacuumMap getLastMap() {
         return lastMap;
     }
 
+    /**
+     * @return All names of the old maps.
+     */
     public Set<String> getPreviousMaps() {
         return previousMaps.keySet();
     }
 
+    /**
+     * @return True if a active map is available.
+     */
     public boolean hasActiveMap() {
         return !(activeMap == null);
     }
 
+    /**
+     * @return The number of old maps.
+     */
     public int numberOfPreviousMaps() {
         return previousMaps.size();
     }
 
+    /**
+     * Update the active map.
+     */
     public void updateActiveMap() {
         generateActiveMap();
     }
 
+    /**
+     * Update the active maps path.
+     * @return True if the file was updated successfully.
+     */
     public boolean updateActiveMapSlam() {
         if (activeMapSlam == null) {
             LOGGER.info("No slam file set");
@@ -289,6 +326,9 @@ public class Maps {
         return true;
     }
 
+    /**
+     * Update the old maps.
+     */
     public void updatePreviousMaps() {
         generatePreviousMaps();
     }
