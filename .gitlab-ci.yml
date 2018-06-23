@@ -18,11 +18,11 @@ maven_test:
 coverage:
   stage: deploy
   script:
-    - git clone git@git.sg-o.de:root/miioMapServer.wiki.git
+    - git clone git@git.sg-o.de:root/miIOMapServer.wiki.git
     - mkdir -p report
     - mv target/site/jacoco/jacoco.csv report/jacoco.csv
-    - csv2md --pretty report/jacoco.csv > miioMapServer.wiki/report.md
-    - cd miioMapServer.wiki/
+    - csv2md --pretty report/jacoco.csv > miIOMapServer.wiki/report.md
+    - cd miIOMapServer.wiki/
     - git add .
     - git diff-index --quiet HEAD || git commit -a -m "Updated coverage report"
     - git push origin master
