@@ -192,7 +192,7 @@ public class ServerThread extends Thread {
         } else {
             LOGGER.warning("Not authenticated");
             builder.setActiveMapAvailable(false);
-            builder.setError(constructError(MapErrorProto.MapError.ErrorCode.NONE, ""));
+            builder.setError(constructError(MapErrorProto.MapError.ErrorCode.NOT_AUTHENTICATED, ""));
         }
         try {
             LOGGER.info("Sending info");
