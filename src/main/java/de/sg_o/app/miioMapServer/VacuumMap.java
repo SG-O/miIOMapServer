@@ -357,6 +357,7 @@ public class VacuumMap implements Serializable {
         return pathMap;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void drawRectangle(int x0, int y0, int w, int h, int[] map, int mapWidth, int color) {
         for (int j = y0; j < (y0 + h); j++) {
             for (int i = x0; i < (x0 + w); i++) {
@@ -683,6 +684,7 @@ public class VacuumMap implements Serializable {
         bytesToPath(pathBytes);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private int toColorInt(int r, int g, int b, int a) {
         return (a & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
     }
