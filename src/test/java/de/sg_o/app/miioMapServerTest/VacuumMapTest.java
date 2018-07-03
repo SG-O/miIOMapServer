@@ -23,8 +23,8 @@ import de.sg_o.proto.MapSlamProto;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.awt.*;
 import java.io.*;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static org.junit.Assert.*;
@@ -57,34 +57,28 @@ public class VacuumMapTest {
 
     @Test
     public void getMapTest() {
-        assertEquals(-8553091, m0.getMap().getRGB(0, 0));
-        assertEquals(4096, m0.getMap().getHeight());
-        assertEquals(4096, m0.getMap().getWidth());
-        assertEquals(-8553091, m1.getMap().getRGB(0, 0));
-        assertEquals(1024, m1.getMap().getHeight());
-        assertEquals(1024, m1.getMap().getWidth());
-        assertEquals(-16777216, m2.getMap().getRGB(0, 0));
-        assertEquals(2048, m2.getMap().getHeight());
-        assertEquals(2048, m2.getMap().getWidth());
+        assertEquals(-8553091, m0.getMap()[0]);
+        assertEquals(-8553091, m1.getMap()[0]);
+        assertEquals(0, m2.getMap()[0]);
     }
 
     @Test
     public void getPathTest() {
-        assertEquals("Point2D.Float[2048.0, 2048.0]", m0.getPath().get(0).toString());
-        assertEquals("Point2D.Float[2169.68, 2074.24]", m0.getPath().get(500).toString());
-        assertEquals("Point2D.Float[512.0, 512.0]", m1.getPath().get(0).toString());
-        assertEquals("Point2D.Float[543.36, 517.56]", m1.getPath().get(500).toString());
+        assertEquals("[2048.0, 2048.0]", Arrays.toString(m0.getPath().get(0)));
+        assertEquals("[2169.68, 2074.24]", Arrays.toString(m0.getPath().get(500)));
+        assertEquals("[512.0, 512.0]", Arrays.toString(m1.getPath().get(0)));
+        assertEquals("[543.36, 517.56]", Arrays.toString(m1.getPath().get(500)));
         assertEquals(0, m2.getPath().size());
     }
 
     @Test
     public void getBoundingBoxTest() {
-        assertEquals(644, m0.getBoundingBox().height);
-        assertEquals(492, m0.getBoundingBox().width);
-        assertEquals(161, m1.getBoundingBox().height);
-        assertEquals(123, m1.getBoundingBox().width);
-        assertEquals(2048, m2.getBoundingBox().height);
-        assertEquals(2048, m2.getBoundingBox().width);
+        assertEquals(644, m0.getBoundingBox()[3]);
+        assertEquals(492, m0.getBoundingBox()[2]);
+        assertEquals(161, m1.getBoundingBox()[3]);
+        assertEquals(123, m1.getBoundingBox()[2]);
+        assertEquals(2048, m2.getBoundingBox()[3]);
+        assertEquals(2048, m2.getBoundingBox()[2]);
     }
 
     @Test
@@ -93,32 +87,26 @@ public class VacuumMapTest {
         assertEquals(1, m1.getOverSample());
         assertEquals(2, m2.getOverSample());
 
-        assertEquals("Point2D.Float[2048.0, 2048.0]", m0.getPath().get(0).toString());
-        assertEquals(644, m0.getBoundingBox().height);
-        assertEquals(492, m0.getBoundingBox().width);
-        assertEquals(644, m0.getMapWithPathInBounds().getHeight());
-        assertEquals(492, m0.getMapWithPathInBounds().getWidth());
-        assertEquals(-16776961, m0.getMapWithPath().getRGB(2048, 2048));
+        assertEquals("[2048.0, 2048.0]", Arrays.toString(m0.getPath().get(0)));
+        assertEquals(644, m0.getBoundingBox()[3]);
+        assertEquals(492, m0.getBoundingBox()[2]);
+        assertEquals(-8553091, m0.getMapWithPath()[0]);
         m0.setOverSample(2);
-        assertEquals("Point2D.Float[1024.0, 1024.0]", m0.getPath().get(0).toString());
-        assertEquals(322, m0.getBoundingBox().height);
-        assertEquals(246, m0.getBoundingBox().width);
-        assertEquals(322, m0.getMapWithPathInBounds().getHeight());
-        assertEquals(246, m0.getMapWithPathInBounds().getWidth());
-        assertEquals(-16776961, m0.getMapWithPath().getRGB(1024, 1024));
+        assertEquals("[1024.0, 1024.0]", Arrays.toString(m0.getPath().get(0)));
+        assertEquals(322, m0.getBoundingBox()[3]);
+        assertEquals(246, m0.getBoundingBox()[2]);
+        assertEquals(-8553091, m0.getMapWithPath()[0]);
         m0.setOverSample(-1);
-        assertEquals("Point2D.Float[512.0, 512.0]", m0.getPath().get(0).toString());
-        assertEquals(161, m0.getBoundingBox().height);
-        assertEquals(123, m0.getBoundingBox().width);
-        assertEquals(161, m0.getMapWithPathInBounds().getHeight());
-        assertEquals(123, m0.getMapWithPathInBounds().getWidth());
-        assertEquals(-16776961, m0.getMapWithPath().getRGB(512, 512));
+        assertEquals("[512.0, 512.0]", Arrays.toString(m0.getPath().get(0)));
+        assertEquals(161, m0.getBoundingBox()[3]);
+        assertEquals(123, m0.getBoundingBox()[2]);
+        assertEquals(-8553091, m0.getMapWithPath()[0]);
 
     }
 
     @Test
     public void mapPointScaleTest() {
-        Point p0 = new Point(200, 400);
+        int[] p0 = new int[]{200, 400};
         int[] b0 = m0.mapPointScale(p0);
         int[] b1 = m1.mapPointScale(p0);
         int[] b2 = m2.mapPointScale(p0);
@@ -139,7 +127,7 @@ public class VacuumMapTest {
 
     @Test
     public void mapRectangleScaleTest() {
-        Rectangle r0 = new Rectangle(200, 400, 20, 40);
+        int[] r0 = new int[]{200, 400, 20, 40};
         int[] b0 = m0.mapRectangleScale(r0);
         int[] b1 = m1.mapRectangleScale(r0);
         int[] b2 = m2.mapRectangleScale(r0);
@@ -168,29 +156,22 @@ public class VacuumMapTest {
 
     @Test
     public void getMapWithPathInBoundsTest() {
-        assertEquals(644, m0.getMapWithPathInBounds().getHeight());
-        assertEquals(492, m0.getMapWithPathInBounds().getWidth());
-        assertEquals(644, m0.getMapWithPathInBounds(Color.MAGENTA, Color.ORANGE).getHeight());
-        assertEquals(492, m0.getMapWithPathInBounds(Color.MAGENTA, Color.ORANGE).getWidth());
-        assertEquals(161, m1.getMapWithPathInBounds().getHeight());
-        assertEquals(123, m1.getMapWithPathInBounds().getWidth());
-        assertEquals(2048, m2.getMapWithPathInBounds().getHeight());
-        assertEquals(2048, m2.getMapWithPathInBounds().getWidth());
+        assertEquals(316848, m0.getMapWithPathInBounds().length);
+        assertEquals(316848, m0.getMapWithPathInBounds(VacuumMap.RED, VacuumMap.GREEN).length);
+        assertEquals(19803, m1.getMapWithPathInBounds().length);
+        assertEquals(4194304, m2.getMapWithPathInBounds().length);
     }
 
     @Test
     public void getMapWithPathTest() {
-        assertEquals(-8553091, m0.getMapWithPath().getRGB(0, 0));
-        assertEquals(4096, m0.getMapWithPath().getHeight());
-        assertEquals(4096, m0.getMapWithPath().getWidth());
-        assertEquals(-16776961, m0.getMapWithPath().getRGB(2048, 2048));
-        assertEquals(-14336, m0.getMapWithPath(Color.MAGENTA, Color.ORANGE).getRGB(2048, 2048));
-        assertEquals(-8553091, m1.getMapWithPath().getRGB(0, 0));
-        assertEquals(1024, m1.getMapWithPath().getHeight());
-        assertEquals(1024, m1.getMapWithPath().getWidth());
-        assertEquals(-16777216, m2.getMapWithPath().getRGB(0, 0));
-        assertEquals(2048, m2.getMapWithPath().getHeight());
-        assertEquals(2048, m2.getMapWithPath().getWidth());
+        assertEquals(-8553091, m0.getMapWithPath()[0]);
+        assertEquals(16777216, m0.getMapWithPath().length);
+        assertEquals(-8553091, m0.getMapWithPath()[0]);
+        assertEquals(-8553091, m0.getMapWithPath(VacuumMap.RED, VacuumMap.GREEN)[0]);
+        assertEquals(-8553091, m1.getMapWithPath()[0]);
+        assertEquals(1048576, m1.getMapWithPath().length);
+        assertEquals(0, m2.getMapWithPath()[0]);
+        assertEquals(4194304, m2.getMapWithPath().length);
     }
 
     @Test
@@ -259,9 +240,9 @@ public class VacuumMapTest {
 
     @Test
     public void toStringTest() {
-        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:4096; height:4096, pathEntries=6040, boundingBox=java.awt.Rectangle[x=1768,y=1676,width=492,height=644], overSample=4}", m0.toString());
-        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=6039, boundingBox=java.awt.Rectangle[x=442,y=419,width=123,height=161], overSample=1}", m1.toString());
-        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:2048; height:2048, pathEntries=0, boundingBox=java.awt.Rectangle[x=0,y=0,width=2048,height=2048], overSample=2}", m2.toString());
+        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:4096; height:4096, pathEntries=6040, boundingBox=[1768, 1676, 492, 644], overSample=4}", m0.toString());
+        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=6039, boundingBox=[442, 419, 123, 161], overSample=1}", m1.toString());
+        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:2048; height:2048, pathEntries=0, boundingBox=[0, 0, 2048, 2048], overSample=2}", m2.toString());
     }
 
     @Test
@@ -277,7 +258,7 @@ public class VacuumMapTest {
         assertEquals(6041, m3.getPathSize());
         VacuumMap m4 = new VacuumMap(null, null, 2);
         assertEquals(0, m4.getPathSize());
-        assertEquals(-16777216, m4.getMap().getRGB(0,0));
+        assertEquals(0, m4.getMap()[0]);
     }
 
     @Test
@@ -291,7 +272,7 @@ public class VacuumMapTest {
         new BufferedReader(new StringReader(""));
         VacuumMap m4 = new VacuumMap(new BufferedReader(new StringReader("")), null, -1, null);
         VacuumMap m5 = new VacuumMap(new BufferedReader(new StringReader("\n")), null, -1, null);
-        assertEquals(-16777216, m4.getMap().getRGB(0,0));
-        assertEquals(-16777216, m5.getMap().getRGB(0,0));
+        assertEquals(0, m4.getMap()[0]);
+        assertEquals(0, m5.getMap()[0]);
     }
 }
