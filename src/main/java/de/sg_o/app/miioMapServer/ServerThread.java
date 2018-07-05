@@ -118,11 +118,11 @@ public class ServerThread extends Thread {
                 break;
             case GET_PREVIOUS_MAP_SLAM:
                 LOGGER.info("GET_PREVIOUS_MAP_SLAM detected");
-                sendPreviousMapSlam(req.getOptInt(), output);
+                sendPreviousMapSlam(output);
                 break;
             case GET_OLD_MAP_SLAM:
                 LOGGER.info("GET_OLD_MAP_SLAM detected");
-                sendOldMapSlam(req.getOpt(), req.getOptInt(), output);
+                sendOldMapSlam(req.getOpt(), output);
                 break;
             case AUTHENTICATE:
                 LOGGER.info("AUTHENTICATE detected");
@@ -218,12 +218,8 @@ public class ServerThread extends Thread {
             LOGGER.warning("OutputStream null");
             return;
         }
-        LOGGER.info("Updating active map");
-        if (!mapHandler.updateActiveMapSlam()) {
-            mapHandler.updateActiveMap();
-        }
         LOGGER.info("Sending active map slam");
-        sendSlam(mapHandler.getActiveMap(), start, output, MapErrorProto.MapError.ErrorCode.MAP_NOT_AVAILABLE);
+        sendSlam(mapHandler.getActivePathFrom(start), output, MapErrorProto.MapError.ErrorCode.MAP_NOT_AVAILABLE);
     }
 
     private void sendPreviousMap(OutputStream output) {
@@ -237,7 +233,7 @@ public class ServerThread extends Thread {
         sendMap(mapHandler.getLastMap(), output, MapErrorProto.MapError.ErrorCode.MAP_NOT_AVAILABLE);
     }
 
-    private void sendPreviousMapSlam(int start, OutputStream output) {
+    private void sendPreviousMapSlam(OutputStream output) {
         if (output == null) {
             LOGGER.warning("OutputStream null");
             return;
@@ -245,7 +241,7 @@ public class ServerThread extends Thread {
         LOGGER.info("Updating previous map");
         mapHandler.updatePreviousMaps();
         LOGGER.info("Sending previous map slam");
-        sendSlam(mapHandler.getLastMap(), start, output, MapErrorProto.MapError.ErrorCode.MAP_NOT_AVAILABLE);
+        sendSlam(mapHandler.getLastPath(), output, MapErrorProto.MapError.ErrorCode.MAP_NOT_AVAILABLE);
     }
 
     private void sendOldMap(String name, OutputStream output) {
@@ -268,7 +264,7 @@ public class ServerThread extends Thread {
         sendMap(mapHandler.getOldMap(name), output, MapErrorProto.MapError.ErrorCode.MAP_NOT_FOUND);
     }
 
-    private void sendOldMapSlam(String name, int start, OutputStream output) {
+    private void sendOldMapSlam(String name, OutputStream output) {
         if (output == null) {
             LOGGER.warning("OutputStream null");
             return;
@@ -285,10 +281,10 @@ public class ServerThread extends Thread {
             return;
         }
         LOGGER.info("Sending old map slam: " + name);
-        sendSlam(mapHandler.getOldMap(name), start, output, MapErrorProto.MapError.ErrorCode.MAP_NOT_FOUND);
+        sendSlam(mapHandler.getOldPath(name), output, MapErrorProto.MapError.ErrorCode.MAP_NOT_FOUND);
     }
 
-    private void sendMap(VacuumMap map, OutputStream output, MapErrorProto.MapError.ErrorCode applicableError) {
+    private void sendMap(MapPackageProto.MapPackage map, OutputStream output, MapErrorProto.MapError.ErrorCode applicableError) {
         if (output == null) {
             LOGGER.warning("OutputStream null");
             return;
@@ -301,7 +297,7 @@ public class ServerThread extends Thread {
             } else {
                 LOGGER.info("Generating map package and sending");
                 try {
-                    map.getMapPackage().writeDelimitedTo(output);
+                    map.writeDelimitedTo(output);
                     return;
                 } catch (IOException ignore) {
                     LOGGER.warning("Couldn't send map message");
@@ -319,7 +315,7 @@ public class ServerThread extends Thread {
         }
     }
 
-    private void sendSlam(VacuumMap map, int start,  OutputStream output, MapErrorProto.MapError.ErrorCode applicableError) {
+    private void sendSlam(MapSlamProto.MapSlam map, OutputStream output, MapErrorProto.MapError.ErrorCode applicableError) {
         if (output == null) {
             LOGGER.warning("OutputStream null");
             return;
@@ -332,7 +328,7 @@ public class ServerThread extends Thread {
             } else {
                 LOGGER.info("Generating map slam and sending");
                 try {
-                    map.getMapPath(start).writeDelimitedTo(output);
+                    map.writeDelimitedTo(output);
                     return;
                 } catch (IOException ignore) {
                     LOGGER.warning("Couldn't send map slam message");

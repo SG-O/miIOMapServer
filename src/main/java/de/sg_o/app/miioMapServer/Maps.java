@@ -1,5 +1,8 @@
 package de.sg_o.app.miioMapServer;
 
+import de.sg_o.proto.MapPackageProto;
+import de.sg_o.proto.MapSlamProto;
+
 import java.io.*;
 import java.util.LinkedHashMap;
 import java.util.Set;
@@ -16,9 +19,10 @@ public class Maps {
     private final File activeMapDirectory;
     private final File previousMapsDirectory;
 
-    private VacuumMap activeMap;
+    private MapPackageProto.MapPackage activeMap;
     private File activeMapSlam;
-    private VacuumMap lastMap;
+    private MapPackageProto.MapPackage lastMap;
+    private MapSlamProto.MapSlam lastPath;
     private int lastMapNumber = 0;
     private long activeMapLastModified = 0;
     private LinkedHashMap<String, File[]> previousMaps = new LinkedHashMap<>();
@@ -89,7 +93,7 @@ public class Maps {
         try {
             synchronized(this) {
                 LOGGER.info("Creating active de.sg_o.app.miioMapServer.VacuumMap");
-                activeMap = new VacuumMap(new BufferedReader(new FileReader(mapFile)), new BufferedReader(new FileReader(slamFile)), 1, LOGGER.getLevel());
+                activeMap = VacuumMap.directToMapPackage(new BufferedReader(new FileReader(mapFile)));
                 activeMapSlam = slamFile;
                 LOGGER.info("Created active de.sg_o.app.miioMapServer.VacuumMap");
                 activeMapLastModified = mapFile.lastModified();
@@ -140,6 +144,7 @@ public class Maps {
         if (latestMapName != null){
             LOGGER.info("Generating latest old vacuumMap");
             lastMap = getOldMap(latestMapName);
+            lastPath = getOldPath(latestMapName);
             LOGGER.info("Generated latest old vacuumMap");
         }
     }
@@ -190,7 +195,7 @@ public class Maps {
      * @param name The maps name.
      * @return The old map or null if no map was found.
      */
-    public VacuumMap getOldMap(String name){
+    public MapPackageProto.MapPackage getOldMap(String name){
         if (name == null) {
             LOGGER.warning("No old map file provided to parse");
             return null;
@@ -206,15 +211,53 @@ public class Maps {
         }
         LOGGER.info("Decompressing map file");
         BufferedReader mapReader = unzipFile(map[0]);
-        LOGGER.info("Decompressing SLAM file");
-        BufferedReader slamReader = unzipFile(map[1]);
         LOGGER.info("Done decompressing");
-        if (mapReader == null || slamReader == null) {
+        if (mapReader == null) {
             LOGGER.warning("Decompression failed");
             return null;
         }
         LOGGER.info("Generating old map");
-        return new VacuumMap(mapReader, slamReader, 1, LOGGER.getLevel());
+        try {
+            return VacuumMap.directToMapPackage(mapReader);
+        } catch (IOException e) {
+            LOGGER.warning("Unable to open old map file");
+            return null;
+        }
+    }
+
+    /**
+     * Get a old maps path.
+     * @param name The maps name.
+     * @return The old maps path or null if no map was found.
+     */
+    public MapSlamProto.MapSlam getOldPath(String name){
+        if (name == null) {
+            LOGGER.warning("No old map file provided to parse");
+            return null;
+        }
+        File[] map = previousMaps.get(name);
+        if (map == null) {
+            LOGGER.warning("Old map " + name + " not found");
+            return null;
+        }
+        if (map.length != 2) {
+            LOGGER.warning("Old map entry not of correct length");
+            return null;
+        }
+        LOGGER.info("Decompressing SLAM file");
+        BufferedReader slamReader = unzipFile(map[1]);
+        LOGGER.info("Done decompressing");
+        if (slamReader == null) {
+            LOGGER.warning("Decompression failed");
+            return null;
+        }
+        LOGGER.info("Generating old map");
+        try {
+            return VacuumMap.directToPath(slamReader);
+        } catch (IOException e) {
+            LOGGER.warning("Unable to open old path file");
+            return null;
+        }
     }
 
     private BufferedReader unzipFile(File compressed) {
@@ -257,15 +300,22 @@ public class Maps {
     /**
      * @return The active map or null if it isn't available.
      */
-    public VacuumMap getActiveMap() {
+    public MapPackageProto.MapPackage getActiveMap() {
         return activeMap;
     }
 
     /**
      * @return The latest of the old maps or null if it isn't available.
      */
-    public VacuumMap getLastMap() {
+    public MapPackageProto.MapPackage getLastMap() {
         return lastMap;
+    }
+
+    /**
+     * @return The latest of the old maps path or null if it isn't available.
+     */
+    public MapSlamProto.MapSlam getLastPath() {
+        return lastPath;
     }
 
     /**
@@ -297,33 +347,32 @@ public class Maps {
     }
 
     /**
-     * Update the active maps path.
-     * @return True if the file was updated successfully.
+     * Get the active maps path from a certain start position.
+     * @param start The position to start to read from;
+     * @return The path from that start point or null if the path could not be read.
      */
-    public boolean updateActiveMapSlam() {
+    public MapSlamProto.MapSlam getActivePathFrom(int start) {
         if (activeMapSlam == null) {
             LOGGER.info("No slam file set");
-            return false;
+            return null;
         }
         if (!activeMapSlam.exists()) {
             LOGGER.info("Slam file does not exist");
-            return false;
+            return null;
         }
         if (activeMap == null) {
             LOGGER.info("Active map not set");
-            return false;
+            return null;
         }
         try {
             synchronized(this) {
                 LOGGER.info("Appending slam");
-                activeMap.appendSlam(new BufferedReader(new FileReader(activeMapSlam)));
+                return VacuumMap.directToPath(new BufferedReader(new FileReader(activeMapSlam)), start);
             }
         } catch (IOException e) {
             LOGGER.warning("Appending slam failed");
-            return false;
+            return null;
         }
-        LOGGER.info("Appended slam");
-        return true;
     }
 
     /**

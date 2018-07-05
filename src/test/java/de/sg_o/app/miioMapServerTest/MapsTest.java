@@ -2,6 +2,8 @@ package de.sg_o.app.miioMapServerTest;
 
 import de.sg_o.app.miioMapServer.Maps;
 import de.sg_o.app.miioMapServer.VacuumMap;
+import de.sg_o.proto.MapPackageProto;
+import de.sg_o.proto.MapSlamProto;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,7 +20,8 @@ public class MapsTest {
     private Maps s0;
     private Maps s1;
     private Maps s2;
-    private VacuumMap m0;
+    private MapPackageProto.MapPackage m0;
+    private MapSlamProto.MapSlam sl0;
 
     @Before
     public void setUp() throws Exception {
@@ -36,7 +39,8 @@ public class MapsTest {
         BufferedReader map = new BufferedReader(new FileReader(activeFileMap));
         BufferedReader slam = new BufferedReader(new FileReader(activeFileSlam));
 
-        m0 = new VacuumMap(map, slam, 1, null);
+        m0 = VacuumMap.directToMapPackage(map);
+        sl0 = VacuumMap.directToPath(slam);
         map.close();
         slam.close();
     }
@@ -45,20 +49,21 @@ public class MapsTest {
     public void activeTest() {
         assertTrue(s0.hasActiveMap());
         assertEquals(m0,s0.getActiveMap());
+        assertEquals(sl0, s0.getActivePathFrom(0));
         s0.updateActiveMap();
         assertEquals(m0,s0.getActiveMap());
-        assertTrue(s0.updateActiveMapSlam());
-        assertEquals(m0,s0.getActiveMap());
+        assertEquals(sl0, s0.getActivePathFrom(0));
         assertFalse(s1.hasActiveMap());
         s1.updateActiveMap();
-        assertFalse(s1.updateActiveMapSlam());
         assertFalse(s1.hasActiveMap());
         assertTrue(s2.hasActiveMap());
     }
 
     @Test
     public void previousTest() {
-        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=4598, boundingBox=[460, 409, 90, 118], overSample=1}", s0.getLastMap().toString());
+        assertEquals(118, s0.getLastMap().getActiveH());
+        assertEquals(90, s0.getLastMap().getActiveW());
+        assertEquals(1997, s0.getLastPath().getPointsCount());
     }
 
     @Test
@@ -66,8 +71,12 @@ public class MapsTest {
         assertEquals(2, s0.numberOfPreviousMaps());
         assertTrue(s0.getPreviousMaps().contains("000143.20180604001001609_1387101062713_2018032100REL"));
         assertTrue(s0.getPreviousMaps().contains("000144.20180604034309095_1387101062713_2018032100REL"));
-        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=4831, boundingBox=[442, 450, 133, 117], overSample=1}", s0.getOldMap("000143.20180604001001609_1387101062713_2018032100REL").toString());
-        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=4598, boundingBox=[460, 409, 90, 118], overSample=1}", s0.getOldMap("000144.20180604034309095_1387101062713_2018032100REL").toString());
+        assertEquals(117, s0.getOldMap("000143.20180604001001609_1387101062713_2018032100REL").getActiveH());
+        assertEquals(133, s0.getOldMap("000143.20180604001001609_1387101062713_2018032100REL").getActiveW());
+        assertEquals(118, s0.getOldMap("000144.20180604034309095_1387101062713_2018032100REL").getActiveH());
+        assertEquals(90, s0.getOldMap("000144.20180604034309095_1387101062713_2018032100REL").getActiveW());
+        assertEquals(1743, s0.getOldPath("000143.20180604001001609_1387101062713_2018032100REL").getPointsCount());
+        assertEquals(1997, s0.getOldPath("000144.20180604034309095_1387101062713_2018032100REL").getPointsCount());
         s0.updatePreviousMaps();
         assertEquals(2, s0.numberOfPreviousMaps());
         assertEquals(2, s1.numberOfPreviousMaps());

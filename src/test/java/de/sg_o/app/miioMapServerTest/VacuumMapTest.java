@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 import static org.junit.Assert.*;
@@ -34,11 +35,14 @@ public class VacuumMapTest {
     private VacuumMap m1;
     private VacuumMap m2;
 
+    private File fileMap;
+    private File fileSlam;
+
     @Before
     public void setUp() throws Exception {
         ClassLoader classLoader = getClass().getClassLoader();
-        File fileMap = new File(Objects.requireNonNull(classLoader.getResource("run/shm/navmap0.ppm")).getFile());
-        File fileSlam = new File(Objects.requireNonNull(classLoader.getResource("run/shm/SLAM_fprintf.log")).getFile());
+        fileMap = new File(Objects.requireNonNull(classLoader.getResource("run/shm/navmap0.ppm")).getFile());
+        fileSlam = new File(Objects.requireNonNull(classLoader.getResource("run/shm/SLAM_fprintf.log")).getFile());
         File fileBadSlam = new File(Objects.requireNonNull(classLoader.getResource("SLAM_fprintf_bad.log")).getFile());
 
         BufferedReader map = new BufferedReader(new FileReader(fileMap));
@@ -65,9 +69,9 @@ public class VacuumMapTest {
     @Test
     public void getPathTest() {
         assertEquals("[2048.0, 2048.0]", Arrays.toString(m0.getPath().get(0)));
-        assertEquals("[2169.68, 2074.24]", Arrays.toString(m0.getPath().get(500)));
+        assertEquals("[2049.12, 2062.24]", Arrays.toString(m0.getPath().get(500)));
         assertEquals("[512.0, 512.0]", Arrays.toString(m1.getPath().get(0)));
-        assertEquals("[543.36, 517.56]", Arrays.toString(m1.getPath().get(500)));
+        assertEquals("[512.28, 515.56]", Arrays.toString(m1.getPath().get(500)));
         assertEquals(0, m2.getPath().size());
     }
 
@@ -212,7 +216,7 @@ public class VacuumMapTest {
         slam.close();
 
         assertTrue(m0.equals(m3));
-        assertFalse(m1.equals(m4));
+        assertTrue(m1.equals(m4));
         assertFalse(m0.equals(m1));
         assertFalse(m0.equals(m2));
 
@@ -240,35 +244,61 @@ public class VacuumMapTest {
 
     @Test
     public void toStringTest() {
-        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:4096; height:4096, pathEntries=6040, boundingBox=[1768, 1676, 492, 644], overSample=4}", m0.toString());
-        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=6039, boundingBox=[442, 419, 123, 161], overSample=1}", m1.toString());
+        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:4096; height:4096, pathEntries=2419, boundingBox=[1768, 1676, 492, 644], overSample=4}", m0.toString());
+        assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:1024; height:1024, pathEntries=2419, boundingBox=[442, 419, 123, 161], overSample=1}", m1.toString());
         assertEquals("de.sg_o.app.miioMapServer.VacuumMap{map=width:2048; height:2048, pathEntries=0, boundingBox=[0, 0, 2048, 2048], overSample=2}", m2.toString());
     }
 
     @Test
-    public void protobufTest() {
-        MapPackageProto.MapPackage mp = m0.getMapPackage();
-        MapSlamProto.MapSlam ms = m0.getMapPath();
-        VacuumMap m3 = new VacuumMap(mp, ms, m0.getOverSample());
+    public void protobufTest() throws IOException {
+        MapPackageProto.MapPackage mp0 = m0.getMapPackage();
+        MapSlamProto.MapSlam ms0 = m0.getMapPath();
+        VacuumMap m3 = new VacuumMap(mp0, ms0, m0.getOverSample());
         assertEquals(m0, m3);
-        assertEquals(6040, m3.getPathSize());
+        assertEquals(2419, m3.getPathSize());
         assertEquals(m0.getPathSize(), m3.getPathSize());
         assertEquals(MapErrorProto.MapError.ErrorCode.SLAM_OUT_OF_RANGE, m0.getMapPath(m0.getPathSize()).getError().getCode());
         m3.appendMapSlam(m0.getMapPath(m0.getPathSize() - 1));
-        assertEquals(6041, m3.getPathSize());
+        assertEquals(2420, m3.getPathSize());
         VacuumMap m4 = new VacuumMap(null, null, 2);
         assertEquals(0, m4.getPathSize());
         assertEquals(0, m4.getMap()[0]);
+
+        BufferedReader map = new BufferedReader(new FileReader(fileMap));
+        BufferedReader slam = new BufferedReader(new FileReader(fileSlam));
+        MapPackageProto.MapPackage mp1 = VacuumMap.directToMapPackage(map);
+        MapSlamProto.MapSlam ms1 = VacuumMap.directToPath(slam);
+        VacuumMap m5 = new VacuumMap(mp1, ms1, m0.getOverSample());
+        assertArrayEquals(m0.getMap(), m5.getMap());
+        List<float[]> slm0 = m0.getPath();
+        List<float[]> slm1 = m5.getPath();
+        assertEquals(slm0.size(), slm1.size());
+        for (int i = 0; i < slm0.size(); i++) {
+            assertArrayEquals(slm0.get(i), slm1.get(i), 0.001f);
+        }
+        map.close();
+        slam.close();
+
+
+        slam = new BufferedReader(new FileReader(fileSlam));
+        MapSlamProto.MapSlam ms2 = VacuumMap.directToPath(slam, 1000);
+        assertEquals(1419, ms2.getPointsCount());
+        slam.close();
+
+        slam = new BufferedReader(new FileReader(fileSlam));
+        MapSlamProto.MapSlam ms3 = VacuumMap.directToPath(slam, 5000);
+        assertEquals(MapErrorProto.MapError.ErrorCode.SLAM_OUT_OF_RANGE, ms3.getError().getCode());
+        slam.close();
     }
 
     @Test
     public void appendTest() throws Exception {
         ClassLoader classLoader = getClass().getClassLoader();
-        assertEquals(6040, m0.getPathSize());
+        assertEquals(2419, m0.getPathSize());
         m0.appendSlam(new BufferedReader(new FileReader(new File(Objects.requireNonNull(classLoader.getResource("SLAM_fprintf_bad.log")).getFile()))));
-        assertEquals(6041, m0.getPathSize());
+        assertEquals(2420, m0.getPathSize());
         m0.appendSlam(null);
-        assertEquals(6041, m0.getPathSize());
+        assertEquals(2420, m0.getPathSize());
         new BufferedReader(new StringReader(""));
         VacuumMap m4 = new VacuumMap(new BufferedReader(new StringReader("")), null, -1, null);
         VacuumMap m5 = new VacuumMap(new BufferedReader(new StringReader("\n")), null, -1, null);

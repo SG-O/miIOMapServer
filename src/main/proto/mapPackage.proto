@@ -12,4 +12,5 @@ message MapPackage {
     int32 activeH = 4;
     repeated MapPackageColor data = 5;
     MapError error = 6;
+    int32 version = 7;
 }

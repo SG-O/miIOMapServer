@@ -138,12 +138,16 @@ public class VacuumMap implements Serializable {
 
     private void readSlam(BufferedReader slam) throws IOException {
         String line;
+        float oldX = 100000;
+        float oldY = 100000;
         while ((line = slam.readLine()) != null){
             LOGGER.fine("Parsing line: " + line);
             numberOfSlamLines++;
             if (line.contains("reset")){
                 LOGGER.fine("Reset");
                 path = new LinkedList<>();
+                oldX = 100000;
+                oldY = 100000;
             }
             if (line.contains("lock")) {
                 LOGGER.fine("Lock");
@@ -164,9 +168,14 @@ public class VacuumMap implements Serializable {
                 float x;
                 float y;
                 try {
-                    LOGGER.fine("Parsing coordinates");
                     x = Float.valueOf(split[2]) * (20.0f);
                     y = Float.valueOf(split[3]) * (-20.0f);
+                    if ((Math.abs(x - oldX) > 1.0f) || (Math.abs(y - oldY) > 1.0f)){
+                        oldX = x;
+                        oldY = y;
+                    } else {
+                        continue;
+                    }
                     path.add(new float[]{x, y});
                 } catch (Exception e){
                     LOGGER.warning("Parsing coordinates failed: " + e);
@@ -480,6 +489,7 @@ public class VacuumMap implements Serializable {
         MapPackageProto.MapPackage.Builder pack = MapPackageProto.MapPackage.newBuilder();
         pack.setError(MapErrorProto.MapError.newBuilder().setCode(MapErrorProto.MapError.ErrorCode.NONE).build());
         LOGGER.info("Adding bounding box to output");
+        pack.setVersion(0);
         pack.setActiveX(boundingBox[0]);
         pack.setActiveY(boundingBox[1]);
         pack.setActiveW(boundingBox[2]);
@@ -505,11 +515,22 @@ public class VacuumMap implements Serializable {
                 map[i] = toColorInt(125, 125, 125, 0xff);
             }
 
-            for (MapPackageColorProto.MapPackageColor c : image.getDataList()) {
-                int color = c.getColor();
-                for (int pos : c.getCoordinatesList()) {
-                    map[(boundingBox[0] + (pos & 0xFFFF)) + ((boundingBox[1] + ((pos >> 16) & 0xFFFF)) * MAP_WIDTH)] = color;
-                }
+            switch (image.getVersion()) {
+                case 1:
+                    for (MapPackageColorProto.MapPackageColor c : image.getDataList()) {
+                        int color = c.getColor();
+                        for (int pos : c.getCoordinatesList()) {
+                            map[((pos & 0xFFFF) + ((pos >> 16) & 0xFFFF) * MAP_WIDTH)] = color;
+                        }
+                    }
+                    break;
+                default:
+                    for (MapPackageColorProto.MapPackageColor c : image.getDataList()) {
+                        int color = c.getColor();
+                        for (int pos : c.getCoordinatesList()) {
+                            map[(boundingBox[0] + (pos & 0xFFFF)) + ((boundingBox[1] + ((pos >> 16) & 0xFFFF)) * MAP_WIDTH)] = color;
+                        }
+                    }
             }
         }
     }
@@ -684,8 +705,184 @@ public class VacuumMap implements Serializable {
         bytesToPath(pathBytes);
     }
 
+    /**
+     * Create a map message directly from a map file.
+     * @param image The map file to parse.
+     * @return The message containing the map.
+     * @throws IOException If the file could not be read.
+     */
+    public static MapPackageProto.MapPackage directToMapPackage(BufferedReader image) throws IOException {
+        LOGGER.fine("Initializing bounding box creation");
+        int x = 0;
+        int y = 0;
+        int top = MAP_HEIGHT;
+        int bottom = 0;
+        int left = MAP_WIDTH;
+        int right = 0;
+
+        if (image.readLine() == null) {
+            LOGGER.warning("File format invalid");
+            throw new IOException("File format invalid");
+        }
+        if (image.readLine() == null) {
+            LOGGER.warning("File format invalid");
+            throw new IOException("File format invalid");
+        }
+
+        HashMap<Integer, MapPackageColorProto.MapPackageColor.Builder> colorMap = new HashMap<>();
+
+        while (true) {
+            int[] rgb = {image.read(), image.read(), image.read()};
+            if (rgb[0] < 0 || rgb[1] < 0 || rgb[2] < 0) {
+                LOGGER.info("End of map file reached");
+                //boundingBox = new int[]{left, top, (right - left) + 1, (bottom - top) + 1};
+                break;
+            }
+            for (int i = 0; i < rgb.length; i++) {
+                rgb[i] = rgb[i] & 0xFF;
+            }
+            //map[x + (y * MAP_WIDTH)] = toColorInt(rgb[0], rgb[1], rgb[2], 0xff);
+            if (rgb[0] != 125 || rgb[1] != 125 || rgb[2] != 125){
+                int color = toColorInt(rgb[0], rgb[1], rgb[2], 0xff);
+
+                MapPackageColorProto.MapPackageColor.Builder builder = colorMap.get(color);
+                if (builder == null){
+                    LOGGER.fine("Adding new color: " + color);
+                    MapPackageColorProto.MapPackageColor.Builder nBuilder = MapPackageColorProto.MapPackageColor.newBuilder();
+                    nBuilder.setColor(color);
+                    int comp = (y << 16) + x;
+                    nBuilder.addCoordinates(comp);
+                    colorMap.put(color, nBuilder);
+                } else {
+                    LOGGER.fine("Adding to existing color");
+                    int comp = (y << 16) + x;
+                    builder.addCoordinates(comp);
+                }
+
+                if (x < left) left = x;
+                if (x > right) right = x;
+                if (y < top) top = y;
+                if (y > bottom) bottom = y;
+            }
+            x++;
+            if (x >= MAP_WIDTH){
+                x = 0;
+                y++;
+            }
+            if (y >= MAP_HEIGHT){
+                LOGGER.info("Restarting at the start of the image");
+                y = 0;
+            }
+        }
+
+        MapPackageProto.MapPackage.Builder pack = MapPackageProto.MapPackage.newBuilder();
+        pack.setError(MapErrorProto.MapError.newBuilder().setCode(MapErrorProto.MapError.ErrorCode.NONE).build());
+        LOGGER.info("Adding bounding box to output");
+        pack.setVersion(1);
+        pack.setActiveX(left);
+        pack.setActiveY(top);
+        pack.setActiveW((right - left) + 1);
+        pack.setActiveH((bottom - top) + 1);
+        LOGGER.info("Adding all colors to output");
+        for (MapPackageColorProto.MapPackageColor.Builder b : colorMap.values()){
+            MapPackageColorProto.MapPackageColor col = b.build();
+            LOGGER.fine("Adding color: " + col.toString());
+            pack.addData(col);
+        }
+        LOGGER.info("Building output");
+        return pack.build();
+    }
+
+    /**
+     * Create a path message directly from a slam file.
+     * @param slam The slam file to parse.
+     * @return The message with the path.
+     * @throws IOException If the file could not be read.
+     */
+    public static MapSlamProto.MapSlam directToPath(BufferedReader slam) throws IOException {
+        return directToPath(slam, 0);
+    }
+
+    /**
+     * Create a path message directly from a slam file.
+     * @param slam The slam file to parse.
+     * @param start The path point to start reading from.
+     * @return The message with the path.
+     * @throws IOException If the file could not be read.
+     */
+    public static MapSlamProto.MapSlam directToPath(BufferedReader slam, int start) throws IOException {
+        LOGGER.info("Getting path from " + start);
+        MapErrorProto.MapError.Builder err = MapErrorProto.MapError.newBuilder();
+        MapSlamProto.MapSlam.Builder mapSlam = MapSlamProto.MapSlam.newBuilder();
+
+        String line;
+        boolean slamLocked = true;
+        int pos = 0;
+        float oldX = 100000;
+        float oldY = 100000;
+        float x;
+        float y;
+        while ((line = slam.readLine()) != null){
+            LOGGER.fine("Parsing line: " + line);
+            if (line.contains("reset")){
+                LOGGER.fine("Reset");
+                pos = 0;
+                mapSlam.clearPoints();
+                oldX = 100000;
+                oldY = 100000;
+            }
+            if (line.contains("lock")) {
+                LOGGER.fine("Lock");
+                slamLocked = true;
+            }
+            if (line.contains("unlock")) {
+                LOGGER.fine("Unlock");
+                slamLocked = false;
+            }
+            if (slamLocked) continue;
+            if (line.contains("estimate")){
+                String[] split = line.split("\\s+");
+                if (split.length != 5) {
+                    LOGGER.info("Estimate of wrong length");
+                    continue;
+                }
+                try {
+                    x = Float.valueOf(split[2]) * (20.0f);
+                    y = Float.valueOf(split[3]) * (-20.0f);
+                    if ((Math.abs(x - oldX) > 1.0f) || (Math.abs(y - oldY) > 1.0f)){
+                        oldX = x;
+                        oldY = y;
+                        if (pos < start) {
+                            pos++;
+                            continue;
+                        }
+                    } else {
+                        continue;
+                    }
+                    MapSlamProto.MapSlam.Point.Builder point = MapSlamProto.MapSlam.Point.newBuilder();
+                    point.setX(x);
+                    point.setY(y);
+                    mapSlam.addPoints(point.build());
+                } catch (Exception e){
+                    LOGGER.warning("Parsing coordinates failed: " + e);
+                }
+
+            }
+        }
+        if (pos < start) {
+            LOGGER.warning("Path out of range");
+            err.setCode(MapErrorProto.MapError.ErrorCode.SLAM_OUT_OF_RANGE);
+            mapSlam.clearPoints();
+        } else {
+            err.setCode(MapErrorProto.MapError.ErrorCode.NONE);
+        }
+        mapSlam.setError(err.build());
+        LOGGER.info("Building slam message");
+        return mapSlam.build();
+    }
+
     @SuppressWarnings("SameParameterValue")
-    private int toColorInt(int r, int g, int b, int a) {
+    private static int toColorInt(int r, int g, int b, int a) {
         return (a & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
     }
 }
