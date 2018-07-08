@@ -18,17 +18,22 @@ public class Server extends Thread{
     private boolean running;
     private Token tk;
 
+    private int timeout;
+    private int noMessage;
+
     /**
      * Create a new server.
      * @param activeMapDirectory The directory where the active maps are stored.
      * @param previousMapsDirectory The directory where the directories of old maps can be found.
      * @param port The port to start the server at.
+     * @param noMessage The number of times the socket may timeout before closing the connection.
+     * @param timeout The time in ms allowed to receive a message.
      * @param tokenFile The token of the device.
      * @param logLevel The log level.
      * @param logFile The file where to store the logs. If null the logs will be output to the console.
      * @throws IOException If the directories are invalid, If the log file is invalid or if the token is invalid.
      */
-    public Server(File activeMapDirectory, File previousMapsDirectory, int port, File tokenFile, Level logLevel, File logFile) throws IOException {
+    public Server(File activeMapDirectory, File previousMapsDirectory, int port, int timeout, int noMessage, File tokenFile, Level logLevel, File logFile) throws IOException {
         if (logFile != null) {
             Logger globalLogger =  LOGGER.getParent();
             Handler[] handlers = globalLogger.getHandlers();
@@ -56,6 +61,10 @@ public class Server extends Thread{
         }
         LOGGER.info("Token loaded");
         this.tk = tk;
+        if (noMessage < 0) noMessage = 0;
+        this.noMessage = noMessage;
+        if (timeout < 0) timeout = 0;
+        this.timeout = timeout;
     }
 
     private Token getToken(File tokenFile) throws IOException {
@@ -110,7 +119,7 @@ public class Server extends Thread{
                         continue;
                     }
                     LOGGER.info("Connection established");
-                    new Thread(new ServerThread(socket, mapHandler, tk, LOGGER.getLevel())).start();
+                    new Thread(new ServerThread(socket, mapHandler, tk, noMessage, timeout, LOGGER.getLevel())).start();
                 } catch (IOException ignore) {
                 }
 

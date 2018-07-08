@@ -9,6 +9,9 @@ import java.util.logging.Level;
  * This class runs a basic server.
  */
 public class Run {
+    private static final int TIMEOUT = 5000;
+    private static final int NUMBER_OF_NO_MESSAGE = 5;
+
     private enum Args {
         UNKNOWN("", ""),
         MULTIPLE("-", ""),
@@ -89,7 +92,7 @@ public class Run {
                 return;
             }
         }
-        Server s0 = new Server(currentMap, oldMap, 54331, token, lv, log);
+        Server s0 = new Server(currentMap, oldMap, 54331, TIMEOUT, NUMBER_OF_NO_MESSAGE, token, lv, log);
         s0.run();
     }
 

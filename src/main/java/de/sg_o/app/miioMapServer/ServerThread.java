@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,16 +24,21 @@ public class ServerThread extends Thread {
     private Maps mapHandler;
     private Token tk;
     private boolean authenticated = false;
+    private int noMessage;
+    private int timeout;
+    private int currentMessage = 0;
 
     /**
      * Create a new server thread.
      * @param socket The socket of the new client.
      * @param mapHandler The map handler.
      * @param tk The devices token.
+     * @param noMessage The number of times the socket may timeout before closing the connection.
+     * @param timeout The time in ms allowed to receive a message.
      * @param logLevel The log level.
      * @throws IOException If the the socket is invalid, the token is invalid or the map handler is invalid.
      */
-    public ServerThread(Socket socket, Maps mapHandler, Token tk, Level logLevel) throws IOException {
+    public ServerThread(Socket socket, Maps mapHandler, Token tk, int noMessage, int timeout, Level logLevel) throws IOException {
         super("MapServerThread");
         if (logLevel != null) {
             LOGGER.setLevel(logLevel);
@@ -53,6 +59,11 @@ public class ServerThread extends Thread {
             throw new IOException("No token provided");
         }
         this.tk = tk;
+        if (noMessage < 0) noMessage = 0;
+        this.noMessage = noMessage;
+        if (timeout < 0) timeout = 0;
+        this.timeout = timeout;
+        this.socket.setSoTimeout(timeout);
     }
 
     /**
@@ -76,18 +87,30 @@ public class ServerThread extends Thread {
         MapRequestProto.MapRequest request;
         while (socket.isConnected()) {
             try {
-                LOGGER.info("Trying to receive request");
-                //noinspection StatementWithEmptyBody
-                while ((request = MapRequestProto.MapRequest.parseDelimitedFrom(inputStream)) == null) {
+                request = MapRequestProto.MapRequest.parseDelimitedFrom(inputStream);
+                if (request != null) {
+                    LOGGER.info("Got request");
+                    currentMessage = 0;
+                    sendResponse(request, outputStream);
                 }
-                LOGGER.info("Got request");
-                sendResponse(request, outputStream);
+            } catch (SocketTimeoutException st){
+                currentMessage++;
+                if (currentMessage > noMessage){
+                    LOGGER.warning("No message received in: " + (timeout * noMessage) + "ms");
+                    forceClose();
+                    break;
+                }
             } catch (IOException e) {
                 LOGGER.warning("Error receiving request: " + e.toString());
                 forceClose();
-                return;
+                break;
+            }
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException ignore) {
             }
         }
+        LOGGER.info("ServerThread ended: " + socket.toString());
     }
 
     private void sendResponse(MapRequestProto.MapRequest req, OutputStream output){
