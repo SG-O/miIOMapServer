@@ -68,9 +68,12 @@ public class MapsTest {
 
     @Test
     public void oldTest() {
-        assertEquals(2, s0.numberOfPreviousMaps());
+        assertEquals(3, s0.numberOfPreviousMaps());
+        assertTrue(s0.getPreviousMaps().contains("000142.20180712010502823_1387101062713_2018032100REL"));
         assertTrue(s0.getPreviousMaps().contains("000143.20180604001001609_1387101062713_2018032100REL"));
         assertTrue(s0.getPreviousMaps().contains("000144.20180604034309095_1387101062713_2018032100REL"));
+        assertEquals(190, s0.getOldMap("000142.20180712010502823_1387101062713_2018032100REL").getActiveH());
+        assertEquals(98, s0.getOldMap("000142.20180712010502823_1387101062713_2018032100REL").getActiveW());
         assertEquals(117, s0.getOldMap("000143.20180604001001609_1387101062713_2018032100REL").getActiveH());
         assertEquals(133, s0.getOldMap("000143.20180604001001609_1387101062713_2018032100REL").getActiveW());
         assertEquals(118, s0.getOldMap("000144.20180604034309095_1387101062713_2018032100REL").getActiveH());
@@ -78,8 +81,8 @@ public class MapsTest {
         assertEquals(1743, s0.getOldPath("000143.20180604001001609_1387101062713_2018032100REL").getPointsCount());
         assertEquals(1997, s0.getOldPath("000144.20180604034309095_1387101062713_2018032100REL").getPointsCount());
         s0.updatePreviousMaps();
-        assertEquals(2, s0.numberOfPreviousMaps());
-        assertEquals(2, s1.numberOfPreviousMaps());
+        assertEquals(3, s0.numberOfPreviousMaps());
+        assertEquals(3, s1.numberOfPreviousMaps());
         assertEquals(0, s2.numberOfPreviousMaps());
         s2.updatePreviousMaps();
         assertEquals(0, s2.numberOfPreviousMaps());

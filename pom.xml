@@ -6,7 +6,7 @@
 
     <groupId>de.sg-o.app</groupId>
     <artifactId>miioMapServer</artifactId>
-    <version>0.1.6-SNAPSHOT</version>
+    <version>0.1.7-SNAPSHOT</version>
 
     <name>miIO Vacuum Map Server</name>
     <description>A server that allows access to the Rockrobo vacuums maps</description>
@@ -79,30 +79,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.21.0</version>
-            </plugin>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.1</version>
-                <executions>
-                    <execution>
-                        <id>pre-unit-test</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>post-unit-test</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
-                    <excludes>
-                        <exclude>de/sg_o/proto/**/*</exclude>
-                    </excludes>
+                    <forkCount>0</forkCount>
+                    <reuseForks>true</reuseForks>
                 </configuration>
             </plugin>
             <plugin>
@@ -181,6 +160,15 @@
                     <jvmArgs>
                         <jvmArg>-Djet.gc.ratio=300</jvmArg>
                     </jvmArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>binary.xml</descriptor>
+                    </descriptors>
                 </configuration>
             </plugin>
         </plugins>

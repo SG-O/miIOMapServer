@@ -21,7 +21,7 @@ public class Run {
         LOG_LEVEL("d", "Specify the log level. warning; info; fine; finer; finest; all; off"),
         TOKEN("t", "Specify the path to the file where the token is stored in"),
         VERSION("v", "Print the version of this program"),
-        HELP("?", "Prints this help");
+        HELP("h", "Prints this help");
 
 
         private final String arg;

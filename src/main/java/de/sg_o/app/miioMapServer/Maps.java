@@ -1,8 +1,11 @@
 package de.sg_o.app.miioMapServer;
 
+import de.sg_o.app.miio.util.ByteArray;
 import de.sg_o.proto.MapPackageProto;
 import de.sg_o.proto.MapSlamProto;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.util.LinkedHashMap;
 import java.util.Set;
@@ -16,6 +19,8 @@ import java.util.zip.GZIPInputStream;
 public class Maps {
     private final static Logger LOGGER = Logger.getLogger(Maps.class.getName());
 
+    private final static SecretKeySpec decryptionKey = new SecretKeySpec(ByteArray.hexToBytes("526f434b52304230404245494a494e47"), "AES");
+
     private final File activeMapDirectory;
     private final File previousMapsDirectory;
 
@@ -26,6 +31,7 @@ public class Maps {
     private int lastMapNumber = 0;
     private long activeMapLastModified = 0;
     private LinkedHashMap<String, File[]> previousMaps = new LinkedHashMap<>();
+
 
     /**
      * Create a new Maps object.
@@ -104,7 +110,7 @@ public class Maps {
         }
     }
 
-    private void generatePreviousMaps() {
+    private synchronized void generatePreviousMaps() {
         if (previousMapsDirectory == null) {
             LOGGER.warning("Previous maps directory not set");
             previousMaps = new LinkedHashMap<>();
@@ -167,6 +173,7 @@ public class Maps {
             LOGGER.fine("Previous map directory file: " + f.getName());
             if (f.isDirectory()) continue;
             if (f.getName().startsWith("navmap") && f.getName().endsWith(".gz")) {
+                if (f.getName().contains("navmapfirst")) continue;
                 LOGGER.info("Found navmap");
                 mapFile = f;
             }
@@ -195,7 +202,7 @@ public class Maps {
      * @param name The maps name.
      * @return The old map or null if no map was found.
      */
-    public MapPackageProto.MapPackage getOldMap(String name){
+    public MapPackageProto.MapPackage getOldMap(String name) {
         if (name == null) {
             LOGGER.warning("No old map file provided to parse");
             return null;
@@ -210,7 +217,18 @@ public class Maps {
             return null;
         }
         LOGGER.info("Decompressing map file");
-        BufferedReader mapReader = unzipFile(map[0]);
+        boolean encrypted = false;
+        BufferedReader mapReader;
+        synchronized (this) {
+            try {
+                BufferedReader fileCheck = new BufferedReader(new FileReader(map[1]));
+                if (fileCheck.read() != 31) encrypted = true;
+                if (fileCheck.read() != 65533) encrypted = true;
+                fileCheck.close();
+            } catch (IOException ignored) {
+            }
+            mapReader = unzipFile(map[0], encrypted);
+        }
         LOGGER.info("Done decompressing");
         if (mapReader == null) {
             LOGGER.warning("Decompression failed");
@@ -245,7 +263,18 @@ public class Maps {
             return null;
         }
         LOGGER.info("Decompressing SLAM file");
-        BufferedReader slamReader = unzipFile(map[1]);
+        boolean encrypted = false;
+        BufferedReader slamReader;
+        synchronized (this) {
+            try {
+                BufferedReader fileCheck = new BufferedReader(new FileReader(map[1]));
+                if (fileCheck.read() != 31) encrypted = true;
+                if (fileCheck.read() != 65533) encrypted = true;
+                fileCheck.close();
+            } catch (IOException ignored) {
+            }
+            slamReader = unzipFile(map[1], encrypted);
+        }
         LOGGER.info("Done decompressing");
         if (slamReader == null) {
             LOGGER.warning("Decompression failed");
@@ -260,18 +289,36 @@ public class Maps {
         }
     }
 
-    private BufferedReader unzipFile(File compressed) {
+    private synchronized BufferedReader unzipFile(File compressed, boolean encrypted) {
         if (compressed == null) {
             LOGGER.warning("File for extraction not set");
             return null;
         }
         GZIPInputStream gin;
-        try {
-            LOGGER.info("Generating GZIPInputStream");
-            gin = new GZIPInputStream(new FileInputStream(compressed));
-        } catch (IOException e) {
-            LOGGER.warning("GZIPInputStream could not be created");
-            return null;
+        if (encrypted) {
+            try {
+                LOGGER.info("Reading file to array");
+                FileInputStream inputStream = new FileInputStream(compressed);
+                byte[] inputBytes = new byte[(int) compressed.length()];
+                if (inputStream.read(inputBytes) != inputBytes.length) return null;
+                LOGGER.info("Decrypting file");
+                Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+                cipher.init(Cipher.DECRYPT_MODE, decryptionKey);
+                byte[] outputBytes = cipher.doFinal(inputBytes);
+                LOGGER.info("Generating GZIPInputStream");
+                gin = new GZIPInputStream(new ByteArrayInputStream(outputBytes));
+            } catch (Exception e) {
+                LOGGER.info("Decryption failed: " + e.toString());
+                return null;
+            }
+        } else {
+            try {
+                LOGGER.info("Generating GZIPInputStream");
+                gin = new GZIPInputStream(new FileInputStream(compressed));
+            } catch (IOException e) {
+                LOGGER.warning("GZIPInputStream could not be created");
+                return null;
+            }
         }
         LOGGER.fine("Creating small buffer for decompression");
         byte[] buf = new byte[1024];
@@ -300,42 +347,42 @@ public class Maps {
     /**
      * @return The active map or null if it isn't available.
      */
-    public MapPackageProto.MapPackage getActiveMap() {
+    public synchronized MapPackageProto.MapPackage getActiveMap() {
         return activeMap;
     }
 
     /**
      * @return The latest of the old maps or null if it isn't available.
      */
-    public MapPackageProto.MapPackage getLastMap() {
+    public synchronized MapPackageProto.MapPackage getLastMap() {
         return lastMap;
     }
 
     /**
      * @return The latest of the old maps path or null if it isn't available.
      */
-    public MapSlamProto.MapSlam getLastPath() {
+    public synchronized MapSlamProto.MapSlam getLastPath() {
         return lastPath;
     }
 
     /**
      * @return All names of the old maps.
      */
-    public Set<String> getPreviousMaps() {
+    public synchronized Set<String> getPreviousMaps() {
         return previousMaps.keySet();
     }
 
     /**
      * @return True if a active map is available.
      */
-    public boolean hasActiveMap() {
+    public synchronized boolean hasActiveMap() {
         return !(activeMap == null);
     }
 
     /**
      * @return The number of old maps.
      */
-    public int numberOfPreviousMaps() {
+    public synchronized int numberOfPreviousMaps() {
         return previousMaps.size();
     }
 
