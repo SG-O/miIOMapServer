@@ -6,7 +6,7 @@
 
     <groupId>de.sg-o.app</groupId>
     <artifactId>miioMapServer</artifactId>
-    <version>0.1.8-SNAPSHOT</version>
+    <version>0.1.9-SNAPSHOT</version>
 
     <name>miIO Vacuum Map Server</name>
     <description>A server that allows access to the Rockrobo vacuums maps</description>
@@ -160,6 +160,31 @@
                     <jvmArgs>
                         <jvmArg>-Djet.gc.ratio=300</jvmArg>
                     </jvmArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.1</version>
+                <executions>
+                    <execution>
+                        <id>pre-unit-test</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>post-unit-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>de/sgo/proto/**/*</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
