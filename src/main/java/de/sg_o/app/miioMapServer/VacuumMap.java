@@ -225,6 +225,13 @@ public class VacuumMap implements Serializable {
     }
 
     /**
+     * @return The unscaled complete map.
+     */
+    public synchronized int[] getRawMap() {
+        return map;
+    }
+
+    /**
      * @return The path the vacuum took.
      */
     public synchronized List<float[]> getPath() {
@@ -233,6 +240,13 @@ public class VacuumMap implements Serializable {
             outPath.add(new float[]{(p[0] + (MAP_WIDTH / 2.0f)) * overSample, (p[1] + (MAP_HEIGHT / 2.0f)) * overSample});
         }
         return outPath;
+    }
+
+    /**
+     * @return The unscaled path the vacuum took.
+     */
+    public synchronized List<float[]> getRawPath() {
+        return path;
     }
 
     /**
@@ -252,6 +266,13 @@ public class VacuumMap implements Serializable {
         tmp[2] = boundingBox[2] * overSample;
         tmp[3] = boundingBox[3] * overSample;
         return tmp;
+    }
+
+    /**
+     * @return The unscaled bounding box of the active map area.
+     */
+    public synchronized int[] getRawBoundingBox() {
+        return boundingBox;
     }
 
     /**

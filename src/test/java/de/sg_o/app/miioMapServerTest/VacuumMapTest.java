@@ -179,6 +179,29 @@ public class VacuumMapTest {
     }
 
     @Test
+    public void rawTest() {
+        assertEquals(-8553091, m0.getRawMap()[0]);
+        assertEquals(-8553091, m1.getRawMap()[0]);
+        assertEquals(0, m2.getRawMap()[0]);
+        assertEquals(1024 * 1024, m0.getRawMap().length);
+        assertEquals(1024 * 1024, m1.getRawMap().length);
+        assertEquals(1024 * 1024, m2.getRawMap().length);
+
+        assertEquals("[0.0, -0.0]", Arrays.toString(m0.getRawPath().get(0)));
+        assertEquals("[0.28, 3.56]", Arrays.toString(m0.getRawPath().get(500)));
+        assertEquals("[0.0, -0.0]", Arrays.toString(m1.getRawPath().get(0)));
+        assertEquals("[0.28, 3.56]", Arrays.toString(m1.getRawPath().get(500)));
+        assertEquals(0, m2.getRawPath().size());
+
+        assertEquals(161, m0.getRawBoundingBox()[3]);
+        assertEquals(123, m0.getRawBoundingBox()[2]);
+        assertEquals(161, m1.getRawBoundingBox()[3]);
+        assertEquals(123, m1.getRawBoundingBox()[2]);
+        assertEquals(1024, m2.getRawBoundingBox()[3]);
+        assertEquals(1024, m2.getRawBoundingBox()[2]);
+    }
+
+    @Test
     public void serialisationTest() throws IOException, ClassNotFoundException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(out);
