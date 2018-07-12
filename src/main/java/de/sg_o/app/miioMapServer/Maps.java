@@ -7,6 +7,7 @@ import de.sg_o.proto.MapSlamProto;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.logging.Level;
@@ -217,13 +218,15 @@ public class Maps {
             return null;
         }
         LOGGER.info("Decompressing map file");
-        boolean encrypted = false;
         BufferedReader mapReader;
         synchronized (this) {
+            boolean encrypted = false;
             try {
-                BufferedReader fileCheck = new BufferedReader(new FileReader(map[1]));
-                if (fileCheck.read() != 31) encrypted = true;
-                if (fileCheck.read() != 65533) encrypted = true;
+                RandomAccessFile fileCheck = new RandomAccessFile(map[1], "r");
+                int rd = fileCheck.read();
+                if (rd != 31) encrypted = true;
+                rd = fileCheck.read();
+                if (rd != 139) encrypted = true;
                 fileCheck.close();
             } catch (IOException ignored) {
             }
@@ -263,13 +266,15 @@ public class Maps {
             return null;
         }
         LOGGER.info("Decompressing SLAM file");
-        boolean encrypted = false;
         BufferedReader slamReader;
         synchronized (this) {
+            boolean encrypted = false;
             try {
-                BufferedReader fileCheck = new BufferedReader(new FileReader(map[1]));
-                if (fileCheck.read() != 31) encrypted = true;
-                if (fileCheck.read() != 65533) encrypted = true;
+                RandomAccessFile fileCheck = new RandomAccessFile(map[1], "r");
+                int rd = fileCheck.read();
+                if (rd != 31) encrypted = true;
+                rd = fileCheck.read();
+                if (rd != 139) encrypted = true;
                 fileCheck.close();
             } catch (IOException ignored) {
             }
@@ -339,7 +344,7 @@ public class Maps {
             LOGGER.info("Creating uncompressed BufferedReader");
             return new BufferedReader(new InputStreamReader(is));
         } catch (IOException e) {
-            LOGGER.warning("Decompression failed: " + e.toString());
+            LOGGER.warning("Decompression failed: " + Arrays.toString(e.getStackTrace()));
             return null;
         }
     }

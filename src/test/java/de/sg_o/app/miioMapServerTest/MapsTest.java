@@ -29,9 +29,9 @@ public class MapsTest {
         File currentMap = new File(Objects.requireNonNull(classLoader.getResource("run/shm/")).getFile());
         File oldMap = new File(Objects.requireNonNull(classLoader.getResource("mnt/data/rockrobo/rrlog")).getFile());
         File emptyDir = new File(Objects.requireNonNull(classLoader.getResource("run/")).getFile());
-        s0 = new Maps(currentMap, oldMap, Level.ALL);
-        s1 = new Maps(emptyDir, oldMap, Level.ALL);
-        s2 = new Maps(currentMap, emptyDir, Level.ALL);
+        s0 = new Maps(currentMap, oldMap, Level.WARNING);
+        s1 = new Maps(emptyDir, oldMap, Level.WARNING);
+        s2 = new Maps(currentMap, emptyDir, Level.WARNING);
 
         File activeFileMap = new File(Objects.requireNonNull(classLoader.getResource("run/shm/navmap0.ppm")).getFile());
         File activeFileSlam = new File(Objects.requireNonNull(classLoader.getResource("run/shm/SLAM_fprintf.log")).getFile());
