@@ -183,7 +183,7 @@
                 </executions>
                 <configuration>
                     <excludes>
-                        <exclude>de/sgo/proto/**/*</exclude>
+                        <exclude>de/sg_o/proto/**/*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
